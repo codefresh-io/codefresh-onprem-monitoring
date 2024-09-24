@@ -1,0 +1,104 @@
+{{- if index .Values "prometheus-mongodb-query-exporter" "enabled" }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-mongodb-query-exporter
+  {{- with ( include "mongodb-query-exporter.labels" . ) }}
+  labels:
+    {{- . }}
+  {{- end }}
+data:
+  config.yaml: |
+    version: 2.0
+    bind: 0.0.0.0:9412
+    log:
+      encoding: json
+      level: debug
+      development: true
+      disableCaller: false
+    global:
+      queryTimeout: 60s
+      maxConnection: 9
+      defaultCache: 0
+    servers:
+    - name: production
+      uri: mongodb://localhost:27017 #Will be overwritten by the "mongodb" value
+
+    metrics:
+    {{ with .Values.builds.transient }}
+    {{ range $status := . }}
+    {{ range $env := $.Values.builds.environments }}
+      - name: mongodb_query_builds_statuses
+        type: gauge
+        help: 'Builds statuses gauge metric'
+        value: total
+        labels:
+          - status
+          - environment
+        mode: pull
+        database: google_production
+        collection: workflowprocesses
+        pipeline: |
+          [
+            {
+                "$match" : {
+                    "status" : "{{ $status.status }}",
+                    {{ $env.query }}
+                }
+            },
+            {
+                "$count" : "total"
+            },
+            {
+                "$project" : {
+                    "status" : "{{ $status.status }}",
+                    "environment" : "{{ $env.name }}",
+                    "total" : "$total"
+                }
+            }
+          ]
+    {{ end }}
+    {{ end }}
+    {{ end }}
+
+    {{ with .Values.builds.final }}
+    {{ range $status := . }}
+    {{ range $env := $.Values.builds.environments }}
+      - name: mongodb_query_builds_statuses
+        type: gauge
+        help: 'Builds statuses gauge metric'
+        value: total
+        labels:
+          - status
+          - environment
+        mode: pull
+        database: google_production
+        collection: workflowprocesses
+        pipeline: |
+          [
+            {
+                "$match" : {
+                    "status" : "{{ $status.status }}",
+                    {{ $env.query }},
+                    "created" : {
+                        "$gt" : {"$date": "{{ $status.dateSince }}"}
+                    }
+                }
+            },
+            {
+                "$count" : "total"
+            },
+            {
+                "$project" : {
+                    "status" : "{{ $status.status }}",
+                    "environment" : "{{ $env.name }}",
+                    "total" : {
+                      "$add" : ["$total", {{ index $status "countBefore" $env.name }}]
+                    }
+                }
+            }
+          ]
+    {{ end }}
+    {{ end }}
+    {{ end }}
+{{- end }}

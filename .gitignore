@@ -1,0 +1,4 @@
+values-dev.yaml
+dry-run.yaml
+**/charts/*.tgz
+*.lock

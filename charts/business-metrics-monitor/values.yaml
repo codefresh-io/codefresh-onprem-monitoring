@@ -1,0 +1,57 @@
+builds:
+  final:
+    - status: success
+      dateSince: 2024-01-01T00:00:00.000+0000
+      countBefore:
+          saas: "0"
+          hybrid: "0"
+          unknown: "0"
+    - status: terminated
+      dateSince: 2024-01-01T00:00:00.000+0000
+      countBefore:
+          saas: "0"
+          hybrid: "0"
+          unknown: "0"
+    - status: error
+      dateSince: 2024-01-01T00:00:00.000+0000
+      countBefore:
+          saas: "0"
+          hybrid: "0"
+          unknown: "0"
+  transient:
+    - status: running
+    - status: pending
+    - status: elected
+    - status: delayed
+    - status: terminating
+    - status: pending-approval
+  environments:
+    - name: hybrid
+      query: '"runtimeEnvironmentMetadata.agent" : {"$eq" : true}'
+    - name: saas
+      query: '"runtimeEnvironmentMetadata.agent" : { "$eq" : false }'
+    - name: unknown
+      query: '"runtimeEnvironmentMetadata.agent" : { "$nin": [true,false] }'
+
+prometheus-mongodb-query-exporter:
+  enabled: true
+  labels: {}
+
+  existingConfig:
+    name: prometheus-mongodb-query-exporter
+
+  service:
+    enabled: true
+
+  podSecurityPolicy:
+    enabled: false
+
+  serviceMonitor:
+    enabled: true
+    interval: 60s
+    scrapeTimeout: 60s
+    namespace:
+    labels: {}
+    targetLabels: []
+    metricRelabelings: []
+    sampleLimit: 0

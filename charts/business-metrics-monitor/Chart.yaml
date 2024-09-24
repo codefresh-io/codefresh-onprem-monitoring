@@ -1,0 +1,11 @@
+apiVersion: v2
+appVersion: "1.0"
+description: Business metrcis for Codefresh v1 platform
+name: codefresh-business-metrics
+version: 1.0.0
+dependencies:
+  - name: mongodb-query-exporter
+    alias: prometheus-mongodb-query-exporter
+    version: 5.1.0
+    repository: oci://ghcr.io/raffis/charts
+    condition: prometheus-mongodb-query-exporter.enabled
